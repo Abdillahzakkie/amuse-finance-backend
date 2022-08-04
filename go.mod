@@ -3,8 +3,10 @@ module github.com/abdillahzakkie/amuse-finance-backend
 go 1.19
 
 require (
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
 	github.com/gofiber/fiber/v2 v2.36.0
 	github.com/joho/godotenv v1.4.0
+	github.com/lib/pq v1.10.6
 )
 
 require (
