@@ -5,12 +5,15 @@ import (
 	"log"
 	"os"
 
+	"github.com/abdillahzakkie/amuse-finance-backend/helpers"
 	"github.com/abdillahzakkie/amuse-finance-backend/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 func main() {
+	// load .env file
+	helpers.LoadEnv()
 	app := fiber.New()
 
 	app.Use(logger.New())
