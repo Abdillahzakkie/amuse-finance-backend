@@ -7,6 +7,8 @@ import (
 
 	"github.com/abdillahzakkie/amuse-finance-backend/helpers"
 	"github.com/abdillahzakkie/amuse-finance-backend/models"
+	"github.com/abdillahzakkie/amuse-finance-backend/validators"
+	"github.com/gofiber/fiber/v2"
 )
 
 var us models.UserService
@@ -28,3 +30,27 @@ func init() {
 	}
 }
 
+func CreateNewUser(c *fiber.Ctx) error {
+	var user models.User
+
+	// Parsing the body of the request and assigning it to the reqBody variable.
+	if err := c.BodyParser(&user); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": validators.ErrInvalidData,
+		})
+	}
+
+	// Insert new user into the database.
+	// check if there is an error in the database. If there is an error, 
+	// it will return the error message.
+	if err := us.CreateNewUser(&user); err != nil {
+		switch {
+			case err == validators.ErrInternalServerError:
+				return helpers.RespondWithError(c, fiber.StatusInternalServerError, err)
+			default:
+				return helpers.RespondWithError(c, fiber.StatusBadRequest, err)
+		}
+	}
+
+	return c.Status(fiber.StatusAccepted).JSON(user)
+}
