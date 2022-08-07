@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/abdillahzakkie/amuse-finance-backend/helpers"
 	"github.com/abdillahzakkie/amuse-finance-backend/models"
@@ -53,4 +54,32 @@ func CreateNewUser(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusAccepted).JSON(user)
+}
+
+// It gets a user by ID from the database and returns it as JSON
+func GetUserById(c *fiber.Ctx) error {
+	id := c.Params("id")
+	userId, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		return helpers.RespondWithError(c, fiber.StatusNotFound, validators.ErrInvalidID)
+	}
+	user := models.User{
+		ID: uint(userId),
+	}
+	
+	// Get user by ID from the database
+	// If user does not exist returns an ErrUserNotFound
+	// if other error is thrown it'll return ErrInternalServerError
+	if err := us.GetUserById(&user); err != nil {
+		switch {
+			case err == validators.ErrInternalServerError:
+				return helpers.RespondWithError(c, fiber.StatusInternalServerError, err)
+			case err == models.ErrUserNotFound:
+				return helpers.RespondWithError(c, fiber.StatusNotFound, err)
+			default:
+				return helpers.RespondWithError(c, fiber.StatusBadRequest, err)
+		}
+	}
+	
+	return c.Status(fiber.StatusOK).JSON(user)
 }
