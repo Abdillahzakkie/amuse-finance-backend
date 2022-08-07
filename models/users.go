@@ -37,7 +37,10 @@ type User struct {
 // `User` and returns an error.
 // @property {error} CreateNewUser - This is the method that will be used to create a new user.
 type UserService interface {
+	GetUser(user *User) error
+
 	destructiveReset() error
+	Close() error
 }
 
 // userDB is a struct type that implements the UserService interface.
@@ -65,6 +68,38 @@ func NewUserService(psqlInfo string) (UserService, error) {
 func (db *userDB) Close() error {
 	if err := db.db.Close(); err != nil {
 		return validators.ErrInternalServerError
+	}
+	return nil
+}
+
+// destructiveReset clears all records in users table
+// returns ErrInternalServerError if other error is encountered.
+func (db *userDB) destructiveReset() error {
+	query := "TRUNCATE TABLE users CASCADE"
+	_, err := db.db.Exec(query)
+	if err != nil {
+		return validators.ErrInternalServerError
+	}
+	return nil
+}
+
+
+// GetUser gets user from the database
+// returns ErrUserNotFound if user is not found
+// or ErrInternalServerError if other error is encountered
+func (db *userDB) GetUser(user *User) error {
+	query := `
+		SELECT id, username, email, biography FROM users
+		WHERE (username =  $1 OR email = $2) AND deleted_at IS NULL
+	`
+	row := db.db.QueryRow(query, user.Username, user.Email)
+	if err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Biography); err != nil {
+		switch {
+			case err == sql.ErrNoRows:
+				return ErrUserNotFound
+			default:
+				return validators.ErrInternalServerError
+		}
 	}
 	return nil
 }
