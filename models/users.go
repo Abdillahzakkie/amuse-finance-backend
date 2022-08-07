@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/abdillahzakkie/amuse-finance-backend/auth"
 	"github.com/abdillahzakkie/amuse-finance-backend/database"
 	"github.com/abdillahzakkie/amuse-finance-backend/validators"
 )
@@ -37,6 +38,7 @@ type User struct {
 // `User` and returns an error.
 // @property {error} CreateNewUser - This is the method that will be used to create a new user.
 type UserService interface {
+	CreateNewUser(user *User) error
 	IsExistingUser(username, email string) bool
 	GetUser(user *User) error
 	GetUserById(user *User) error
@@ -82,6 +84,44 @@ func (db *userDB) destructiveReset() error {
 	if err != nil {
 		return validators.ErrInternalServerError
 	}
+	return nil
+}
+
+// CreateNewUser creates a new user in the database.
+// returns ErrUserAlreadyExists if user is already existed,
+// or ErrInternalServerError if other error is encountered.
+func (db *userDB) CreateNewUser(user *User) error {
+	// Checking if the user is valid.
+	if err := validators.ValidateUser(user.Username, user.Email, user.Password); err != nil {
+		return err
+	}
+	// checking if the user is already existing.
+	if db.IsExistingUser(user.Username, user.Email) {
+		return ErrUserAlreadyExists
+	}
+
+	// hash password
+	var err error
+	user.Password, err = auth.HashPassword(user.Password)
+	if err != nil {
+		return validators.ErrInternalServerError
+	}
+	defer func() {
+		// clear password from memory
+		user.Password = ""
+	}()
+
+	// save user to DB
+	query := `
+		INSERT INTO users (username, email, biography, password) 
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
+	`
+	row := db.db.QueryRow(query, user.Username, user.Email, user.Biography, user.Password)
+	if err := row.Scan(&user.ID); err != nil {
+		return validators.ErrInternalServerError
+	}
+
 	return nil
 }
 
