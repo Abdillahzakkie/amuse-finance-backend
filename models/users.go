@@ -37,6 +37,7 @@ type User struct {
 // `User` and returns an error.
 // @property {error} CreateNewUser - This is the method that will be used to create a new user.
 type UserService interface {
+	IsExistingUser(username, email string) bool
 	GetUser(user *User) error
 	GetUserById(user *User) error
 
@@ -122,4 +123,21 @@ func (db *userDB) GetUserById(user *User) error {
 		}
 	}
 	return nil
+}
+
+// IsExistingUser checks if the user is already existing in the database.
+// returns true if user already existed, false otherwise.
+func (db *userDB) IsExistingUser(username, email string) bool {
+	user := User {
+		Username: username,
+		Email: email,
+	}
+
+	if err := db.GetUser(&user);err != nil {
+		switch {
+			case err == ErrUserNotFound:
+				return false
+			}
+	}
+	return true
 }
