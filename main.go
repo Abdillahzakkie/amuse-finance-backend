@@ -26,5 +26,6 @@ func main() {
 
 func setupRoutes(app *fiber.App) {
 	v1 := app.Group("/api/v1")
-	v1.Post("/signup", routes.CreateNewUser)
+	v1.Post("/users/new", routes.CreateNewUser)
+	v1.Get("/users/:id", routes.GetUserById)
 }
