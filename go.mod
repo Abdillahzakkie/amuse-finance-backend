@@ -4,10 +4,12 @@ go 1.19
 
 require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d
+	github.com/goccy/go-json v0.9.10
 	github.com/gofiber/fiber/v2 v2.36.0
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/joho/godotenv v1.4.0
 	github.com/lib/pq v1.10.6
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
 )
 
 require (
