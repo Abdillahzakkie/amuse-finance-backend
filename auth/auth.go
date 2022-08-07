@@ -32,7 +32,6 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
-
 func GenerateJwtToken(username string) (string, error) {
 	claims := customClaims{
 		Username: username,
@@ -46,4 +45,28 @@ func GenerateJwtToken(username string) (string, error) {
 		return "", validators.ErrInternalServerError
 	}
 	return signedToken, nil
+}
+
+func Authenticate(jwtToken string) (username string, err error) {
+	token, err := jwt.ParseWithClaims(
+		jwtToken,
+		&customClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(os.Getenv("JWT_SIGNING_KEY")), nil 
+		},
+	)
+	if err != nil {
+		return "", ErrInvalidJWT
+	}
+
+	claims, ok := token.Claims.(*customClaims)
+	if !ok {
+		return "", ErrInvalidJWT
+	}
+
+	if claims.ExpiresAt.UTC().Unix() < time.Now().UTC().Unix() {
+		return "", ErrInvalidJWT
+	}
+	username = claims.Username
+	return username, nil
 }
