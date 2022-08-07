@@ -38,6 +38,7 @@ type User struct {
 // @property {error} CreateNewUser - This is the method that will be used to create a new user.
 type UserService interface {
 	GetUser(user *User) error
+	GetUserById(user *User) error
 
 	destructiveReset() error
 	Close() error
@@ -83,7 +84,6 @@ func (db *userDB) destructiveReset() error {
 	return nil
 }
 
-
 // GetUser gets user from the database
 // returns ErrUserNotFound if user is not found
 // or ErrInternalServerError if other error is encountered
@@ -94,6 +94,26 @@ func (db *userDB) GetUser(user *User) error {
 	`
 	row := db.db.QueryRow(query, user.Username, user.Email)
 	if err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Biography); err != nil {
+		switch {
+			case err == sql.ErrNoRows:
+				return ErrUserNotFound
+			default:
+				return validators.ErrInternalServerError
+		}
+	}
+	return nil
+}
+
+// GetUserById gets user by ID,
+// returns ErrUserNotFound if user is not found
+// or ErrInternalServerError if other error is encountered
+func (db *userDB) GetUserById(user *User) error {
+	query := `
+		SELECT id, username, email FROM users
+		WHERE (id = $1) AND deleted_at IS NULL
+	`
+	row := db.db.QueryRow(query, user.ID)
+	if err := row.Scan(&user.ID, &user.Username, &user.Email); err != nil {
 		switch {
 			case err == sql.ErrNoRows:
 				return ErrUserNotFound
