@@ -37,6 +37,7 @@ type User struct {
 // `User` and returns an error.
 // @property {error} CreateNewUser - This is the method that will be used to create a new user.
 type UserService interface {
+	destructiveReset() error
 }
 
 // userDB is a struct type that implements the UserService interface.
@@ -57,4 +58,13 @@ func NewUserService(psqlInfo string) (UserService, error) {
 		db: db,
 	}
 	return &ud, nil
+}
+
+// Close closes the database connection.
+// returns ErrInternalServerError if other error is encountered.
+func (db *userDB) Close() error {
+	if err := db.db.Close(); err != nil {
+		return validators.ErrInternalServerError
+	}
+	return nil
 }
