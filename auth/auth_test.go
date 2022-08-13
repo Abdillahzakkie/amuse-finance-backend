@@ -23,3 +23,18 @@ func TestHashPassword(t *testing.T) {
 		t.Errorf("Expected password hash length to be 60, got %d", len(hashedPassword))
 	}
 }
+
+func TestGenerateJwtToken(t *testing.T) {
+	token, err := GenerateJwtToken("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if token == "" {
+		t.Error("Expected JWT token not to be empty")
+	}
+
+	if len(token) != 129 {
+		t.Errorf("Expected JWT token length to be 129, got %d", len(token))
+	}
+}
