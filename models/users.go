@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/abdillahzakkie/amuse-finance-backend/auth"
-	"github.com/abdillahzakkie/amuse-finance-backend/database"
-	"github.com/abdillahzakkie/amuse-finance-backend/validators"
+	"github.com/abdillahzakkie/amuse_finance_backend/auth"
+	"github.com/abdillahzakkie/amuse_finance_backend/database"
+	"github.com/abdillahzakkie/amuse_finance_backend/validators"
 )
 
 var (
@@ -30,17 +30,26 @@ type User struct {
 	Email			string    	`json:"email"`
 	Biography		string 		`json:"biography"`
 	Password  		string    	`json:"-"`
+	Token			string 		`json:"-"`
 	CreatedAt 		time.Time 	`json:"-"`
 	UpdatedAt 		time.Time 	`json:"-"`
+}
+
+type UserForm struct {
+	ID 				uint 		`json:"id"`
+	Username		string    	`json:"username"`
+	Email			string    	`json:"email"`
+	Biography		string 		`json:"biography"`
+	Password  		string    	`json:"password"`
 }
 
 // `UserService` is an interface that has a method called `CreateNewUser` that takes a pointer to a
 // `User` and returns an error.
 // @property {error} CreateNewUser - This is the method that will be used to create a new user.
 type UserService interface {
-	CreateNewUser(user *User) error
-	IsExistingUser(username, email string) bool
-	GetUser(user *User) error
+	CreateNewUser(body *UserForm) (*User,error)
+	IsExistingUser(username string) bool
+	GetUserByUsername(username string) (*User,error)
 	GetUserById(user *User) error
 
 	destructiveReset() error
@@ -64,6 +73,9 @@ func NewUserService(psqlInfo string) (UserService, error) {
 	ud := userDB{
 		db: db,
 	}
+
+	// clear all users in users table
+	ud.destructiveReset()
 	return &ud, nil
 }
 
@@ -90,26 +102,35 @@ func (db *userDB) destructiveReset() error {
 // CreateNewUser creates a new user in the database.
 // returns ErrUserAlreadyExists if user is already existed,
 // or ErrInternalServerError if other error is encountered.
-func (db *userDB) CreateNewUser(user *User) error {
+func (db *userDB) CreateNewUser(body *UserForm) (*User,error) {
+	user := User{
+		Username: body.Username,
+		Email: body.Email,
+		Biography: body.Biography,
+		Password: body.Password,
+	}
+
+	defer func() {
+		// clear password from memory
+		body.Password = ""
+		user.Password = ""
+	}()
+
 	// Checking if the user is valid.
-	if err := validators.ValidateUser(user.Username, user.Email, user.Password); err != nil {
-		return err
+	if err := validators.ValidateUser(body.Username, body.Email, body.Password); err != nil {
+		return nil, err
 	}
 	// checking if the user is already existing.
-	if db.IsExistingUser(user.Username, user.Email) {
-		return ErrUserAlreadyExists
+	if db.IsExistingUser(body.Username) {
+		return nil, ErrUserAlreadyExists
 	}
 
 	// hash password
 	var err error
 	user.Password, err = auth.HashPassword(user.Password)
 	if err != nil {
-		return validators.ErrInternalServerError
+		return nil,validators.ErrInternalServerError
 	}
-	defer func() {
-		// clear password from memory
-		user.Password = ""
-	}()
 
 	// save user to DB
 	query := `
@@ -119,30 +140,36 @@ func (db *userDB) CreateNewUser(user *User) error {
 	`
 	row := db.db.QueryRow(query, user.Username, user.Email, user.Biography, user.Password)
 	if err := row.Scan(&user.ID); err != nil {
-		return validators.ErrInternalServerError
+		return nil, validators.ErrInternalServerError
 	}
 
-	return nil
+	// generate JWT token
+	user.Token, err = auth.GenerateJwtToken(user.Username)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 // GetUser gets user from the database
 // returns ErrUserNotFound if user is not found
 // or ErrInternalServerError if other error is encountered
-func (db *userDB) GetUser(user *User) error {
+func (db *userDB) GetUserByUsername(username string) (*User,error) {
+	var user User
 	query := `
 		SELECT id, username, email, biography FROM users
-		WHERE (username =  $1 OR email = $2) AND deleted_at IS NULL
+		WHERE username =  $1 AND deleted_at IS NULL
 	`
-	row := db.db.QueryRow(query, user.Username, user.Email)
+	row := db.db.QueryRow(query, username)
 	if err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Biography); err != nil {
 		switch {
 			case err == sql.ErrNoRows:
-				return ErrUserNotFound
+				return nil, ErrUserNotFound
 			default:
-				return validators.ErrInternalServerError
+				return nil, validators.ErrInternalServerError
 		}
 	}
-	return nil
+	return &user, nil
 }
 
 // GetUserById gets user by ID,
@@ -167,13 +194,9 @@ func (db *userDB) GetUserById(user *User) error {
 
 // IsExistingUser checks if the user is already existing in the database.
 // returns true if user already existed, false otherwise.
-func (db *userDB) IsExistingUser(username, email string) bool {
-	user := User {
-		Username: username,
-		Email: email,
-	}
-
-	if err := db.GetUser(&user);err != nil {
+func (db *userDB) IsExistingUser(username string) bool {
+	_, err := db.GetUserByUsername(username)
+	if err != nil {
 		switch {
 			case err == ErrUserNotFound:
 				return false

@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/abdillahzakkie/amuse-finance-backend/validators"
+	"github.com/abdillahzakkie/amuse_finance_backend/validators"
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )

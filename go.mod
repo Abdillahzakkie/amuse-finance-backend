@@ -1,4 +1,4 @@
-module github.com/abdillahzakkie/amuse-finance-backend
+module github.com/abdillahzakkie/amuse_finance_backend
 
 go 1.19
 

@@ -6,9 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/abdillahzakkie/amuse-finance-backend/helpers"
-	"github.com/abdillahzakkie/amuse-finance-backend/models"
-	"github.com/abdillahzakkie/amuse-finance-backend/validators"
+	"github.com/abdillahzakkie/amuse_finance_backend/helpers"
+	"github.com/abdillahzakkie/amuse_finance_backend/models"
+	"github.com/abdillahzakkie/amuse_finance_backend/validators"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -32,19 +32,19 @@ func init() {
 }
 
 func CreateNewUser(c *fiber.Ctx) error {
-	var user models.User
+	var body models.UserForm
 
 	// Parsing the body of the request and assigning it to the reqBody variable.
-	if err := c.BodyParser(&user); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": validators.ErrInvalidData,
-		})
+	if err := c.BodyParser(&body); err != nil {
+		fmt.Println("err", err)
+		return helpers.RespondWithError(c, fiber.StatusBadRequest, validators.ErrInvalidData)
 	}
 
 	// Insert new user into the database.
 	// check if there is an error in the database. If there is an error, 
 	// it will return the error message.
-	if err := us.CreateNewUser(&user); err != nil {
+	user, err := us.CreateNewUser(&body)
+	if err != nil {
 		switch {
 			case err == validators.ErrInternalServerError:
 				return helpers.RespondWithError(c, fiber.StatusInternalServerError, err)
@@ -52,6 +52,12 @@ func CreateNewUser(c *fiber.Ctx) error {
 				return helpers.RespondWithError(c, fiber.StatusBadRequest, err)
 		}
 	}
+
+	// set jwt token in cookies
+	c.Cookie(&fiber.Cookie{
+        Name:  "token",
+        Value: user.Token,
+    })
 
 	return c.Status(fiber.StatusAccepted).JSON(user)
 }

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/abdillahzakkie/amuse-finance-backend/helpers"
+	"github.com/abdillahzakkie/amuse_finance_backend/helpers"
 	_ "github.com/lib/pq"
 )
 

@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/abdillahzakkie/amuse-finance-backend/helpers"
-	"github.com/abdillahzakkie/amuse-finance-backend/routes"
+	"github.com/abdillahzakkie/amuse_finance_backend/helpers"
+	"github.com/abdillahzakkie/amuse_finance_backend/routes"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
