@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"time"
 
@@ -32,6 +33,23 @@ func HashPassword(password string) (string, error) {
 	return string(hashedPassword), nil
 }
 
+func VerifyPassword(hashedPassword, password string) bool {
+	fmt.Println("secret", os.Getenv("PASSWORD_HASH_SECRET"))
+	if err :=bcrypt.CompareHashAndPassword(
+		[]byte(hashedPassword), 
+		[]byte(password + os.Getenv("PASSWORD_HASH_SECRET")),
+	); 
+	err != nil {
+	fmt.Println("err", err)
+
+		return false
+	}
+	return true
+}
+
+// It takes a username as a parameter, creates a customClaims struct with the username and an
+// expiration date, creates a new token with the customClaims struct, signs the token with the signing
+// key, and returns the signed token
 func GenerateJwtToken(username string) (string, error) {
 	claims := customClaims{
 		Username: username,
