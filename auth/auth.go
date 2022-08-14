@@ -65,7 +65,8 @@ func GenerateJwtToken(username string) (string, error) {
 	return signedToken, nil
 }
 
-func Authenticate(jwtToken string) (username string, err error) {
+// It takes a JWT token, parses it, and returns the username if the token is valid
+func DecodeJWT(jwtToken string) (username string, err error) {
 	token, err := jwt.ParseWithClaims(
 		jwtToken,
 		&customClaims{},
