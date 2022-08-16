@@ -79,9 +79,27 @@ func NewUserService(psqlInfo string) (UserService, error) {
 		db: db,
 	}
 
+	// Migrate the database
+	ud.Migrate()
+
 	// clear all users in users table
 	ud.destructiveReset()
 	return &ud, nil
+}
+
+// A function that is used to migrate the database.
+func (db *userDB) Migrate() error {
+	path := "./models/SQL/user.sql"
+	data, err := helpers.GetFileContent(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	query := string(data)
+	_, err = db.db.Exec(query)
+	if err != nil {
+		return validators.ErrInternalServerError
+	}
+	return nil
 }
 
 // Close closes the database connection.
