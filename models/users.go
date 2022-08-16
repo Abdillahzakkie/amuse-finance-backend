@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -203,4 +202,25 @@ func (db *userDB) IsExistingUser(username string) bool {
 			}
 	}
 	return true
+}
+
+// GetUser gets user from the database
+// returns ErrUserNotFound if user is not found
+// or ErrInternalServerError if other error is encountered
+func (db *userDB) getUserByUsername(username string) (User,error) {
+	var user User
+	query := `
+		SELECT id, username, email, password, biography FROM users
+		WHERE username =  $1 AND deleted_at IS NULL
+	`
+	row := db.db.QueryRow(query, username)
+	if err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Biography); err != nil {
+		switch {
+			case err == sql.ErrNoRows:
+				return User{}, ErrUserNotFound
+			default:
+				return User{}, validators.ErrInternalServerError
+		}
+	}
+	return user, nil
 }
