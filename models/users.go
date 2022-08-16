@@ -204,6 +204,21 @@ func (db *userDB) IsExistingUser(username string) bool {
 	return true
 }
 
+func (db *userDB) DeleteUserByUserId(id uint) (User, error) {
+	user, err := db.GetUserById(id)
+	if err != nil {
+		return User{}, err
+	}
+	query := `
+		DELETE FROM users WHERE id = $1
+	`
+	_, err = db.db.Exec(query, id)
+	if err !=  nil {
+		return User{}, validators.ErrInternalServerError
+	}
+	return user, nil
+}
+
 // GetUser gets user from the database
 // returns ErrUserNotFound if user is not found
 // or ErrInternalServerError if other error is encountered
