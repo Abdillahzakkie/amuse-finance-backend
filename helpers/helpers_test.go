@@ -15,15 +15,19 @@ func TestLoadEnv(t *testing.T) {
 		t.Error("Expected HOST_NAME to be not empty")
 	}
 
-	if os.Getenv("DB_USER") == "" {
-		t.Error("Expected DB_USER to be not empty")
+	if os.Getenv("POSTGRES_USER") == "" {
+		t.Error("Expected POSTGRES_USER to be not empty")
+	}
+
+	if os.Getenv("POSTGRES_PASSWORD") == "" {
+		t.Error("Expected POSTGRES_PASSWORD to be not empty")
 	}
 
 	if os.Getenv("DB_NAME") == "" {
 		t.Error("Expected DB_NAME to be not empty")
 	}
 
-	if os.Getenv("DB_PORT") == "" {
-		t.Error("Expected DB_PORT to be not empty")
+	if os.Getenv("POSTGRES_PORT") == "" {
+		t.Error("Expected POSTGRES_PORT to be not empty")
 	}
 }
