@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"time"
 
@@ -34,14 +33,11 @@ func HashPassword(password string) (string, error) {
 }
 
 func VerifyPassword(hashedPassword, password string) bool {
-	fmt.Println("secret", os.Getenv("PASSWORD_HASH_SECRET"))
 	if err :=bcrypt.CompareHashAndPassword(
 		[]byte(hashedPassword), 
 		[]byte(password + os.Getenv("PASSWORD_HASH_SECRET")),
 	); 
 	err != nil {
-	fmt.Println("err", err)
-
 		return false
 	}
 	return true
