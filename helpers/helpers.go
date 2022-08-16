@@ -9,14 +9,19 @@ import (
 	"github.com/joho/godotenv"
 )
 
+var rootPath string
+
+func init() {
+	rootDir := "amuse_finance_backend"
+	re := regexp.MustCompile(`^(.*` + rootDir + `)`)
+	cwd, _ := os.Getwd()
+	rootPath = string(re.Find([]byte(cwd)))
+}
+
 // It takes the current working directory, finds the first occurrence of the string "amuse_finance_backend" in it, and
 // then loads the .env file in that directory
 func LoadEnv() {
-	re := regexp.MustCompile(`^(.*` + "amuse_finance_backend" + `)`)
-	cwd, _ := os.Getwd()
-	rootPath := re.Find([]byte(cwd))
-
-	err := godotenv.Load(string(rootPath) + `/.env`)
+	err := godotenv.Load(rootPath + `/.env`)
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(-1)
