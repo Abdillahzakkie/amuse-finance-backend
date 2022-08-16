@@ -3,6 +3,7 @@ package helpers
 import (
 	"log"
 	"os"
+	"path/filepath"
 	"regexp"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,6 +27,15 @@ func LoadEnv() {
 		log.Fatal(err)
 		os.Exit(-1)
 	}
+}
+
+// It reads the file at the given path and returns the content as a byte array
+func GetFileContent(path string) ([]byte, error) {
+	data, err := os.ReadFile(filepath.Join(rootPath, path))
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 // It takes a context, a status code, and a message, and returns an error
